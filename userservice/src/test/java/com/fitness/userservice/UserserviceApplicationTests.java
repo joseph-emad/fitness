@@ -1,0 +1,21 @@
+package com.fitness.userservice;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest(properties = {
+        "spring.cloud.config.enabled=false",
+        "eureka.client.enabled=false",
+        "spring.datasource.url=jdbc:h2:mem:fitness-test",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
+})
+class UserserviceApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}

@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+**/target/
+fitness-app-frontend/node_modules/
+fitness-app-frontend/dist/
+.idea/
