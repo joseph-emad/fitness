@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,7 +29,10 @@ public class KeycloakUserSyncFilter implements WebFilter {
             return chain.filter(exchange);
         }
 
-        return exchange.getPrincipal()
+//        return exchange.getPrincipal()
+//                .ofType(JwtAuthenticationToken.class)
+        return ReactiveSecurityContextHolder.getContext()
+                .map(context -> context.getAuthentication())
                 .ofType(JwtAuthenticationToken.class)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Valid Keycloak token required")))
