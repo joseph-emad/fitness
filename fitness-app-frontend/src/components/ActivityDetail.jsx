@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
-import { getActivityDetail } from '../services/api';
+import { getActivityDetail, getActivityRecommendation } from '../services/api';
 import { Box, Card, CardContent, Divider, Typography } from '@mui/material';
 import AppLayout from './AppLayout';
 
@@ -8,24 +8,32 @@ const ActivityDetail = ({ onLogout }) => {
     const { id } = useParams();
     const [activity, setActivity] = useState(null);
     const [recommendation, setRecommendation] = useState(null);
+    const [activityError, setActivityError] = useState(false);
+    const [recommendationError, setRecommendationError] = useState(false);
 
     useEffect(() => {
-        const fetchActivityDetail = async () =>{
-            try {
-                const response = await getActivityDetail(id);
-                setActivity(response.data);
-                setRecommendation(response.data.recommendation);
-
-            } catch (error) {
+        getActivityDetail(id)
+            .then((response) => setActivity(response.data))
+            .catch((error) => {
                 console.error(error);
-            }
-        }
-
-        fetchActivityDetail();
+                setActivityError(true);
+            });
+        getActivityRecommendation(id)
+            .then((response) => setRecommendation(response.data))
+            .catch((error) => {
+                console.error(error);
+                setRecommendationError(true);
+            });
     }, [id]);
     
     if (!activity) {
-        return <AppLayout onLogout={onLogout}><Typography className="loading-state">Loading...</Typography></AppLayout>
+        return (
+            <AppLayout onLogout={onLogout}>
+                <Typography className="loading-state" role={activityError ? 'alert' : undefined}>
+                    {activityError ? 'Could not load this activity.' : 'Loading...'}
+                </Typography>
+            </AppLayout>
+        );
     }
     return (
         <AppLayout onLogout={onLogout}>
@@ -45,7 +53,29 @@ const ActivityDetail = ({ onLogout }) => {
                 </CardContent>
             </Card>
 
-            {recommendation && (
+            {activity.exercises?.length > 0 && (
+                <Card className="detail-card">
+                    <CardContent>
+                        <Typography className="detail-summary-heading" variant="h5" component="h2">
+                            Exercises
+                        </Typography>
+                        <Box className="exercise-details">
+                            {activity.exercises.map((exercise, index) => (
+                                <Box className="exercise-details__item" key={`${exercise.name}-${index}`}>
+                                    <Typography className="exercise-details__name">
+                                        {exercise.name}
+                                    </Typography>
+                                    <Typography className="exercise-details__metrics">
+                                        {exercise.sets} sets × {exercise.reps} reps · {exercise.weightKg} kg · {exercise.restSeconds}s rest
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    </CardContent>
+                </Card>
+            )}
+
+            {recommendation ? (
                 <Card className="detail-card recommendation-card">
                     <CardContent>
                         <div className="recommendation-heading">
@@ -57,21 +87,21 @@ const ActivityDetail = ({ onLogout }) => {
                         </div>
                         <Box className="recommendation-section">
                             <Typography variant="h6" component="h3">Analysis</Typography>
-                            <Typography paragraph>{activity.recommendation}</Typography>
+                            <Typography paragraph>{recommendation.recommendation}</Typography>
                         </Box>
                         
                         <Divider className="detail-divider" sx={{ my: 2 }} />
                         <Box className="recommendation-section">
                             <Typography variant="h6" component="h3">Improvements</Typography>
-                            {activity?.improvements?.map((improvement, index) => (
-                                <Typography key={index} paragraph>• {activity.improvements}</Typography>
+                            {recommendation.improvements?.map((improvement, index) => (
+                                <Typography key={index} paragraph>• {improvement}</Typography>
                             ))}
                         </Box>
                         
                         <Divider className="detail-divider" sx={{ my: 2 }} />
                         <Box className="recommendation-section">
                             <Typography variant="h6" component="h3">Suggestions</Typography>
-                            {activity?.suggestions?.map((suggestion, index) => (
+                            {recommendation.suggestions?.map((suggestion, index) => (
                                 <Typography key={index} paragraph>• {suggestion}</Typography>
                             ))}
                         </Box>
@@ -79,13 +109,17 @@ const ActivityDetail = ({ onLogout }) => {
                         <Divider className="detail-divider" sx={{ my: 2 }} />
                         <Box className="recommendation-section">
                             <Typography variant="h6" component="h3">Safety Guidelines</Typography>
-                            {activity?.safety?.map((safety, index) => (
+                            {recommendation.safety?.map((safety, index) => (
                                 <Typography key={index} paragraph>• {safety}</Typography>
                             ))}
                         </Box>
                     </CardContent>
                 </Card>
-            )}
+            ) : recommendationError ? (
+                <Typography className="loading-state" role="status">
+                    AI recommendation is not available yet.
+                </Typography>
+            ) : null}
         </AppLayout>
     )
 }

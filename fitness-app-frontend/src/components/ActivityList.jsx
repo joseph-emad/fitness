@@ -39,6 +39,11 @@ const ActivityList = ({ refreshToken }) => {
                             <Typography className="activity-card__type" variant='h6'>{activity.type}</Typography>
                             <Typography className="activity-card__metric">Duration: {activity.duration}</Typography>
                             <Typography className="activity-card__metric">Calories: {activity.caloriesBurned}</Typography>
+                            {activity.exercises?.length > 0 && (
+                                <Typography className="activity-card__metric">
+                                    {activity.exercises.length} exercise{activity.exercises.length === 1 ? '' : 's'}
+                                </Typography>
+                            )}
                         </CardContent>
                     </Card>
                 </Grid>

@@ -2,6 +2,8 @@ package com.fitness.activityservice.service;
 
 import com.fitness.activityservice.dto.ActivityRequest;
 import com.fitness.activityservice.model.Activity;
+import com.fitness.activityservice.model.ActivityType;
+import com.fitness.activityservice.model.Exercise;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,15 +33,22 @@ class ActivityServiceTest {
     void trackActivityValidatesUserAndDelegatesTransactionalPersistence() {
         ActivityRequest request = new ActivityRequest();
         request.setUserId("user-1");
+        request.setType(ActivityType.WEIGHT_TRAINING);
         request.setDuration(30);
         request.setCaloriesBurned(200);
+        request.setExercises(java.util.List.of(new Exercise("Squat", 4, 8, 60.5, 90)));
         when(userValidationService.validateUser("user-1")).thenReturn(true);
         when(activityPersistenceService.persistActivity(request))
-                .thenReturn(Activity.builder().id("activity-1").userId("user-1").build());
+                .thenReturn(Activity.builder()
+                        .id("activity-1")
+                        .userId("user-1")
+                        .exercises(request.getExercises())
+                        .build());
 
         var response = activityService.trackActivity(request);
 
         assertEquals("activity-1", response.getId());
+        assertEquals(request.getExercises(), response.getExercises());
         verify(activityPersistenceService).persistActivity(request);
     }
 
@@ -51,6 +60,37 @@ class ActivityServiceTest {
 
         assertThrows(RuntimeException.class, () -> activityService.trackActivity(request));
 
+        verify(activityPersistenceService, never()).persistActivity(request);
+    }
+
+    @Test
+    void weightTrainingRequiresAtLeastOneExercise() {
+        ActivityRequest request = new ActivityRequest();
+        request.setUserId("user-1");
+        request.setType(ActivityType.WEIGHT_TRAINING);
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> activityService.trackActivity(request));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verify(userValidationService, never()).validateUser("user-1");
+        verify(activityPersistenceService, never()).persistActivity(request);
+    }
+
+    @Test
+    void weightTrainingRejectsInvalidExerciseDetails() {
+        ActivityRequest request = new ActivityRequest();
+        request.setUserId("user-1");
+        request.setType(ActivityType.WEIGHT_TRAINING);
+        request.setExercises(java.util.List.of(new Exercise("Squat", 0, 8, 60.0, 90)));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> activityService.trackActivity(request));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verify(userValidationService, never()).validateUser("user-1");
         verify(activityPersistenceService, never()).persistActivity(request);
     }
 

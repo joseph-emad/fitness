@@ -3,6 +3,8 @@ package com.fitness.activityservice.service;
 import com.fitness.activityservice.dto.ActivityRequest;
 import com.fitness.activityservice.dto.ActivityResponse;
 import com.fitness.activityservice.model.Activity;
+import com.fitness.activityservice.model.ActivityType;
+import com.fitness.activityservice.model.Exercise;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class ActivityService {
     private final ActivityPersistenceService activityPersistenceService;
 
     public ActivityResponse trackActivity(ActivityRequest request) {
+        validateExercises(request);
 
         boolean isValidUser = userValidationService.validateUser(request.getUserId());
         if(!isValidUser){
@@ -38,10 +41,32 @@ public class ActivityService {
         response.setDuration(activity.getDuration());
         response.setCaloriesBurned(activity.getCaloriesBurned());
         response.setStartTime(activity.getStartTime());
+        response.setExercises(activity.getExercises());
         response.setAdditionalMetrics(activity.getAdditionalMetrics());
         response.setCreatedAt(activity.getCreatedAt());
         response.setUpdatedAt(activity.getUpdatedAt());
         return response;
+    }
+
+    private void validateExercises(ActivityRequest request) {
+        if (request.getType() != ActivityType.WEIGHT_TRAINING) {
+            return;
+        }
+        if (request.getExercises() == null || request.getExercises().isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Weight training requires at least one exercise");
+        }
+        for (Exercise exercise : request.getExercises()) {
+            if (exercise == null || exercise.getName() == null || exercise.getName().isBlank()
+                    || exercise.getSets() == null || exercise.getSets() < 1
+                    || exercise.getReps() == null || exercise.getReps() < 1
+                    || exercise.getWeightKg() == null || exercise.getWeightKg() < 0
+                    || exercise.getRestSeconds() == null || exercise.getRestSeconds() < 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Each exercise requires a name, positive sets and reps, a non-negative weight, and non-negative rest time");
+            }
+        }
     }
 
     public List<ActivityResponse> getUserActivities(String userId) {

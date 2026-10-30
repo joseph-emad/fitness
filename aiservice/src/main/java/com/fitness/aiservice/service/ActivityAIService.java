@@ -189,6 +189,7 @@ public class ActivityAIService {
         Activity Type: %s
         Duration: %d minutes
         Calories Burned: %d
+        Exercises: %s
         Additional Metrics: %s
         
         Provide detailed analysis focusing on performance, improvements, next workout suggestions, and safety guidelines.
@@ -197,6 +198,7 @@ public class ActivityAIService {
                 activity.getType(),
                 activity.getDuration(),
                 activity.getCaloriesBurned(),
+                activity.getExercises(),
                 activity.getAdditionalMetrics()
         );
     }

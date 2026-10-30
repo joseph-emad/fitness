@@ -24,6 +24,8 @@ The Keycloak realm and PKCE client are imported from `keycloak/fitness-oauth2-re
 
 AI recommendations require a Gemini API key. Set `GEMINI_API_KEY` in `.env` to enable calls to Gemini; the rest of the stack can start without it.
 
+The activity log supports running, walking, cycling, swimming, weight training, yoga, HIIT, cardio, stretching, and other activities. Weight-training sessions can include multiple exercises, each with a set count, reps per set, weight in kilograms, and rest time in seconds.
+
 Activity creation stores the activity and its RabbitMQ event in a MongoDB transactional outbox. The local MongoDB container is initialized as a single-node replica set for this transaction. The outbox retries failed publishes and uses RabbitMQ publisher confirms; after ten unsuccessful attempts an event is marked `FAILED` for operator review. Delivery is at least once, and the AI consumer is idempotent by activity ID. Any standalone activity-service environment must also use MongoDB configured as a replica set and include its replica set name in `ACTIVITY_MONGODB_URI`.
 
 Use `docker compose down` to stop the services. Compose keeps PostgreSQL and MongoDB data in named volumes. To intentionally remove local database data as well, run `docker compose down --volumes`.

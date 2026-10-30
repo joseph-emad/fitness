@@ -2,6 +2,7 @@ package com.fitness.activityservice.service;
 
 import com.fitness.activityservice.dto.ActivityRequest;
 import com.fitness.activityservice.model.Activity;
+import com.fitness.activityservice.model.Exercise;
 import com.fitness.activityservice.outbox.ActivityOutboxEvent;
 import com.fitness.activityservice.outbox.ActivityOutboxRepository;
 import org.junit.jupiter.api.Test;
@@ -33,11 +34,13 @@ class ActivityPersistenceServiceTest {
         request.setUserId("owner-1");
         request.setDuration(25);
         request.setCaloriesBurned(175);
+        request.setExercises(java.util.List.of(new Exercise("Squat", 4, 8, 60.5, 90)));
         Activity savedActivity = Activity.builder()
                 .id("activity-1")
                 .userId("owner-1")
                 .duration(25)
                 .caloriesBurned(175)
+                .exercises(request.getExercises())
                 .build();
         when(activityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
@@ -53,6 +56,7 @@ class ActivityPersistenceServiceTest {
         assertEquals(ActivityOutboxEvent.Status.PENDING, event.getStatus());
         assertEquals("activity-1", event.getPayload().getActivity().getId());
         assertEquals("owner-1", event.getPayload().getActivity().getUserId());
+        assertEquals(request.getExercises(), event.getPayload().getActivity().getExercises());
         verify(outboxRepository).save(event);
     }
 }

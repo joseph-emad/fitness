@@ -1,9 +1,11 @@
 package com.fitness.activityservice.dto;
 
 import com.fitness.activityservice.model.ActivityType;
+import com.fitness.activityservice.model.Exercise;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -14,6 +16,7 @@ public class ActivityResponse {
     private Integer duration;
     private Integer caloriesBurned;
     private LocalDateTime startTime;
+    private List<Exercise> exercises;
     private Map<String, Object> additionalMetrics;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

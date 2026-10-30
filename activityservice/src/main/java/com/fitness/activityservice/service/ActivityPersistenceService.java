@@ -26,6 +26,7 @@ public class ActivityPersistenceService {
                 .duration(request.getDuration())
                 .caloriesBurned(request.getCaloriesBurned())
                 .startTime(request.getStartTime())
+                .exercises(request.getExercises())
                 .additionalMetrics(request.getAdditionalMetrics())
                 .build();
         Activity savedActivity = activityRepository.save(activity);

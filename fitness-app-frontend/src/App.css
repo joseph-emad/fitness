@@ -200,6 +200,47 @@
   color: var(--green);
 }
 
+.exercise-list {
+  display: grid;
+  gap: 12px;
+}
+
+.exercise-list__heading,
+.exercise-entry__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.exercise-entry {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfcfa;
+}
+
+.exercise-entry__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.exercise-list__add.MuiButton-root,
+.exercise-entry__remove.MuiButton-root {
+  justify-self: start;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.exercise-entry__remove.MuiButton-root {
+  color: #8a3737;
+}
+
 .activity-form .MuiSvgIcon-root {
   color: var(--muted);
 }
@@ -349,6 +390,30 @@
   font-size: 19px;
   font-weight: 700;
   line-height: 1.25;
+}
+
+.exercise-details {
+  display: grid;
+  gap: 10px;
+}
+
+.exercise-details__item {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.exercise-details__name.MuiTypography-root {
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.exercise-details__metrics.MuiTypography-root {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .recommendation-heading {
