@@ -3,6 +3,7 @@ package com.fitness.activityservice.controller;
 import com.fitness.activityservice.dto.ActivityRequest;
 import com.fitness.activityservice.dto.ActivityResponse;
 import com.fitness.activityservice.service.ActivityService;
+import com.fitness.activityservice.service.CoachAccessService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.List;
 public class ActivityController {
 
     private ActivityService activityService;
+    private CoachAccessService coachAccessService;
 
     @PostMapping
     public ResponseEntity<ActivityResponse> trackActivity(@RequestBody ActivityRequest request, @RequestHeader("X-User-ID") String userId){
@@ -25,15 +27,20 @@ public class ActivityController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ActivityResponse>> getUserActivities(@RequestHeader("X-User-ID") String userId){
-        return ResponseEntity.ok(activityService.getUserActivities(userId));
+    public ResponseEntity<List<ActivityResponse>> getUserActivities(
+            @RequestHeader("X-User-ID") String userId,
+            @RequestParam(required = false) String traineeId){
+        return ResponseEntity.ok(activityService.getUserActivities(
+                coachAccessService.resolveOwner(userId, traineeId)));
     }
 
     @GetMapping("/{activityId}")
     public ResponseEntity<ActivityResponse> getActivity(
             @PathVariable String activityId,
-            @RequestHeader("X-User-ID") String userId) {
-        return ResponseEntity.ok(activityService.getActivityById(activityId, userId));
+            @RequestHeader("X-User-ID") String userId,
+            @RequestParam(required = false) String traineeId) {
+        return ResponseEntity.ok(activityService.getActivityById(
+                activityId, coachAccessService.resolveOwner(userId, traineeId)));
     }
 
 }

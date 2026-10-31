@@ -30,6 +30,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role = UserRole.USER;
 
+    private Boolean roleChosen = false;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

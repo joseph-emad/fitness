@@ -5,26 +5,26 @@ import { Box, Card, CardContent, Divider, Typography } from '@mui/material';
 import AppLayout from './AppLayout';
 
 const ActivityDetail = ({ onLogout }) => {
-    const { id } = useParams();
+    const { id, traineeId } = useParams();
     const [activity, setActivity] = useState(null);
     const [recommendation, setRecommendation] = useState(null);
     const [activityError, setActivityError] = useState(false);
     const [recommendationError, setRecommendationError] = useState(false);
 
     useEffect(() => {
-        getActivityDetail(id)
+        getActivityDetail(id, traineeId)
             .then((response) => setActivity(response.data))
             .catch((error) => {
                 console.error(error);
                 setActivityError(true);
             });
-        getActivityRecommendation(id)
+        getActivityRecommendation(id, traineeId)
             .then((response) => setRecommendation(response.data))
             .catch((error) => {
                 console.error(error);
                 setRecommendationError(true);
             });
-    }, [id]);
+    }, [id, traineeId]);
     
     if (!activity) {
         return (

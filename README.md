@@ -30,6 +30,10 @@ Activity creation stores the activity and its RabbitMQ event in a MongoDB transa
 
 Use `docker compose down` to stop the services. Compose keeps PostgreSQL and MongoDB data in named volumes. To intentionally remove local database data as well, run `docker compose down --volumes`.
 
+## Coaches and training requests
+
+On first login each user chooses **Trainee** or **Coach** (permanent). Trainees browse coaches and send a training request; the coach accepts or declines. Once accepted, the coach can view the trainee's activities and AI recommendations (read-only) until the trainee ends the coaching. Coach status is self-selected and not verified. Existing users are prompted to choose on next login.
+
 ## Build and checks without Docker
 
 Build and test all backend services from the repository root with `mvn verify`. In `fitness-app-frontend`, run `npm ci`, `npm run test`, `npm run lint`, and `npm run build`.

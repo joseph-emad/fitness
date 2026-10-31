@@ -665,3 +665,15 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+.coach-panel {
+  margin-bottom: 2rem;
+}
+
+.coach-card {
+  margin-bottom: 1rem;
+}
+
+.request-status {
+  font-weight: 600;
+}
