@@ -22,7 +22,13 @@ public class UserService {
     public UserResponse register( RegisterRequest request) {
 
         if (repository.existsByEmail(request.getEmail())){
-            return toResponse(repository.findByEmail(request.getEmail()));
+            User existing = repository.findByEmail(request.getEmail());
+            // Keep the row linked to the current Keycloak account (e.g. after the Keycloak user was recreated)
+            if (request.getKeycloakId() != null && !request.getKeycloakId().equals(existing.getKeycloakId())) {
+                existing.setKeycloakId(request.getKeycloakId());
+                existing = repository.save(existing);
+            }
+            return toResponse(existing);
         }
         User user = new User();
         user.setEmail(request.getEmail());

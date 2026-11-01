@@ -57,6 +57,21 @@ class UserServiceTest {
     }
 
     @Test
+    void registerRelinksExistingEmailToNewKeycloakId() {
+        User existing = new User();
+        existing.setEmail("a@example.test");
+        existing.setKeycloakId("old-sub");
+        when(userRepository.existsByEmail("a@example.test")).thenReturn(true);
+        when(userRepository.findByEmail("a@example.test")).thenReturn(existing);
+        when(userRepository.save(existing)).thenReturn(existing);
+        var request = new com.fitness.userservice.dto.RegisterRequest();
+        request.setEmail("a@example.test");
+        request.setKeycloakId("new-sub");
+
+        assertEquals("new-sub", userService.register(request).getKeycloakId());
+    }
+
+    @Test
     void adminRoleCannotBeSelfAssigned() {
         var error = assertThrows(ResponseStatusException.class, () -> userService.chooseRole("kc", UserRole.ADMIN));
         assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
