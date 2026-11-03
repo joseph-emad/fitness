@@ -4,6 +4,7 @@ import com.fitness.userservice.dto.RegisterRequest;
 import com.fitness.userservice.dto.UserResponse;
 import com.fitness.userservice.model.User;
 import com.fitness.userservice.model.UserRole;
+import com.fitness.userservice.repository.PaymentMethodRepository;
 import com.fitness.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository repository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     public UserResponse register( RegisterRequest request) {
 
@@ -84,6 +86,12 @@ public class UserService {
         response.setRoleChosen(Boolean.TRUE.equals(user.getRoleChosen()));
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
+        if (user.getRole() == UserRole.COACH) {
+            response.setCoachPriceCents(user.getCoachPriceCents());
+            response.setCurrency(user.getCurrency() == null ? "USD" : user.getCurrency());
+            response.setPaymentMethods(paymentMethodRepository.findByCoachId(user.getKeycloakId()).stream()
+                    .map(PaymentSettingsService::toDto).toList());
+        }
         return response;
     }
 }

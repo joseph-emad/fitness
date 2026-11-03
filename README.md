@@ -36,6 +36,14 @@ On first login each user chooses **Trainee** or **Coach** (permanent). Trainees 
 
 Trainees must state a **goal** when requesting training. For an accepted request, the coach builds a structured training plan (weeks → days → exercises with sets/reps/notes) and both sides can exchange messages (polled every 5 seconds) on the "Plan & messages" page. Both are read-only/locked once coaching ends. Endpoints: `/api/training-plans/request/{id}` and `/api/messages/request/{id}`.
 
+## Payments
+
+Payments are manual (no payment provider needed). A coach sets a one-time price and lists payment methods
+(`PUT /api/users/me/pricing`, `GET|POST /api/users/me/payment-methods`, `DELETE /api/users/me/payment-methods/{id}`).
+A request snapshots the price; after acceptance the trainee pays outside the app and clicks "I've paid"
+(`PUT /api/training-requests/{id}/payment/claim`). The coach confirms or rejects
+(`.../payment/confirm`, `.../payment/reject`). Until confirmed, the trainee's plan returns 402; chat stays open.
+
 ## Build and checks without Docker
 
 Build and test all backend services from the repository root with `mvn verify`. In `fitness-app-frontend`, run `npm ci`, `npm run test`, `npm run lint`, and `npm run build`.

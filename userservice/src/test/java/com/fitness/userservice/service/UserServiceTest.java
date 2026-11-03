@@ -23,6 +23,8 @@ import static org.mockito.Mockito.when;
 class UserServiceTest {
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private com.fitness.userservice.repository.PaymentMethodRepository paymentMethodRepository;
     @InjectMocks
     private UserService userService;
 

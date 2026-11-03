@@ -1,11 +1,15 @@
 package com.fitness.userservice.service;
 
+import com.fitness.userservice.dto.PaymentClaimRequest;
 import com.fitness.userservice.dto.TrainingRequestCreate;
 import com.fitness.userservice.dto.TrainingRequestResponse;
+import com.fitness.userservice.model.PaymentMethod;
+import com.fitness.userservice.model.PaymentStatus;
 import com.fitness.userservice.model.TrainingRequest;
 import com.fitness.userservice.model.TrainingRequestStatus;
 import com.fitness.userservice.model.User;
 import com.fitness.userservice.model.UserRole;
+import com.fitness.userservice.repository.PaymentMethodRepository;
 import com.fitness.userservice.repository.TrainingRequestRepository;
 import com.fitness.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,7 @@ public class TrainingRequestService {
 
     private final TrainingRequestRepository requestRepository;
     private final UserRepository userRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     public TrainingRequestResponse create(String traineeId, TrainingRequestCreate create) {
         String coachId = create.getCoachId();
@@ -46,6 +51,11 @@ public class TrainingRequestService {
         request.setCoachId(coach.getKeycloakId());
         request.setGoal(create.getGoal() == null ? null : create.getGoal().trim());
         request.setMessage(create.getMessage() == null ? null : create.getMessage().trim());
+        if (coach.getCoachPriceCents() != null && coach.getCoachPriceCents() > 0) {
+            request.setPriceCents(coach.getCoachPriceCents());
+            request.setCurrency(coach.getCurrency() == null ? "USD" : coach.getCurrency());
+            request.setPaymentStatus(PaymentStatus.UNPAID);
+        }
         return toResponse(requestRepository.save(request));
     }
 
@@ -90,6 +100,64 @@ public class TrainingRequestService {
                 .orElseThrow(this::notFound);
     }
 
+    // Trainee says they paid outside the app using one of the coach's methods.
+    public TrainingRequestResponse claimPayment(String requestId, String traineeId, PaymentClaimRequest claim) {
+        TrainingRequest request = requestRepository.findById(requestId)
+                .filter(r -> r.getTraineeId().equals(traineeId))
+                .orElseThrow(this::notFound);
+        requireAccepted(request);
+        if (paymentStatusOf(request) != PaymentStatus.UNPAID) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No payment is due for this request");
+        }
+        PaymentMethod method = paymentMethodRepository.findById(claim.getPaymentMethodId())
+                .filter(m -> m.getCoachId().equals(request.getCoachId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown payment method"));
+        request.setPaymentMethodId(method.getId());
+        request.setPaymentReference(claim.getReference() == null ? null : claim.getReference().trim());
+        request.setPaymentStatus(PaymentStatus.PENDING_CONFIRMATION);
+        return toResponse(requestRepository.save(request));
+    }
+
+    public TrainingRequestResponse confirmPayment(String requestId, String coachId) {
+        return answerPayment(requestId, coachId, PaymentStatus.PAID);
+    }
+
+    public TrainingRequestResponse rejectPayment(String requestId, String coachId) {
+        return answerPayment(requestId, coachId, PaymentStatus.UNPAID);
+    }
+
+    // False only when the trainee still owes an unconfirmed payment.
+    public boolean isPlanUnlocked(TrainingRequest request) {
+        PaymentStatus status = paymentStatusOf(request);
+        return status == PaymentStatus.NOT_REQUIRED || status == PaymentStatus.PAID;
+    }
+
+    private TrainingRequestResponse answerPayment(String requestId, String coachId, PaymentStatus result) {
+        TrainingRequest request = requestRepository.findById(requestId)
+                .filter(r -> r.getCoachId().equals(coachId))
+                .orElseThrow(this::notFound);
+        requireAccepted(request);
+        if (paymentStatusOf(request) != PaymentStatus.PENDING_CONFIRMATION) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No payment is awaiting confirmation");
+        }
+        request.setPaymentStatus(result);
+        if (result == PaymentStatus.UNPAID) {
+            request.setPaymentMethodId(null);
+            request.setPaymentReference(null);
+        }
+        return toResponse(requestRepository.save(request));
+    }
+
+    private void requireAccepted(TrainingRequest request) {
+        if (request.getStatus() != TrainingRequestStatus.ACCEPTED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Coaching is not active");
+        }
+    }
+
+    private PaymentStatus paymentStatusOf(TrainingRequest request) {
+        return request.getPaymentStatus() == null ? PaymentStatus.NOT_REQUIRED : request.getPaymentStatus();
+    }
+
     private TrainingRequestResponse decide(String requestId, String coachId, TrainingRequestStatus status) {
         TrainingRequest request = requestRepository.findById(requestId)
                 .filter(r -> r.getCoachId().equals(coachId))
@@ -117,6 +185,15 @@ public class TrainingRequestService {
         response.setCoachId(request.getCoachId());
         response.setGoal(request.getGoal());
         response.setMessage(request.getMessage());
+        response.setPriceCents(request.getPriceCents());
+        response.setCurrency(request.getCurrency());
+        response.setPaymentStatus(paymentStatusOf(request));
+        response.setPaymentMethodId(request.getPaymentMethodId());
+        response.setPaymentReference(request.getPaymentReference());
+        if (request.getPaymentMethodId() != null) {
+            paymentMethodRepository.findById(request.getPaymentMethodId())
+                    .ifPresent(m -> response.setPaymentMethodLabel(m.getLabel()));
+        }
         response.setStatus(request.getStatus());
         response.setCreatedAt(request.getCreatedAt());
         response.setUpdatedAt(request.getUpdatedAt());

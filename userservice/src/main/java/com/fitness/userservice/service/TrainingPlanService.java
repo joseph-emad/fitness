@@ -43,9 +43,12 @@ public class TrainingPlanService {
     }
 
     public TrainingPlanDto get(String requestId, String userId) {
-        requestService.findForParticipant(requestId, userId);
-        return planRepository.findByRequestId(requestId).map(this::toDto)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No plan yet"));
+        TrainingRequest request = requestService.findForParticipant(requestId, userId);
+        if (request.getCoachId().equals(userId) || requestService.isPlanUnlocked(request)) {
+            return planRepository.findByRequestId(requestId).map(this::toDto)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No plan yet"));
+        }
+        throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Payment is required to view the plan");
     }
 
     private TrainingPlanDto toDto(TrainingPlan plan) {

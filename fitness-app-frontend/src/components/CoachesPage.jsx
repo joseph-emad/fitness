@@ -1,7 +1,7 @@
-import { Box, Button, Card, CardContent, TextField, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, MenuItem, TextField, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { cancelRequest, getCoaches, getSentRequests, sendTrainingRequest } from "../services/api";
+import { cancelRequest, claimPayment, getCoaches, getSentRequests, sendTrainingRequest } from "../services/api";
 import AppLayout from "./AppLayout";
 
 const ACTIVE = ["PENDING", "ACCEPTED"];
@@ -11,6 +11,8 @@ const CoachesPage = ({ onLogout }) => {
   const [requests, setRequests] = useState([]);
   const [messages, setMessages] = useState({});
   const [goals, setGoals] = useState({});
+  const [methodChoice, setMethodChoice] = useState({});
+  const [references, setReferences] = useState({});
   const navigate = useNavigate();
   const [error, setError] = useState("");
 
@@ -58,6 +60,12 @@ const CoachesPage = ({ onLogout }) => {
             <CardContent>
               <Typography variant="h6">{`${coach.firstName ?? ""} ${coach.lastName ?? ""}`.trim() || coach.email}</Typography>
               <Typography>{coach.email}</Typography>
+              <Typography>
+                {coach.coachPriceCents > 0 ? `Price: ${(coach.coachPriceCents / 100).toFixed(2)} ${coach.currency}` : "Free"}
+              </Typography>
+              {(coach.paymentMethods ?? []).length > 0 && (
+                <Typography>Accepts: {coach.paymentMethods.map((m) => m.label).join(", ")}</Typography>
+              )}
               {!hasActive(coach.keycloakId) && (
                 <>
                   <TextField
@@ -102,6 +110,34 @@ const CoachesPage = ({ onLogout }) => {
               <Typography className="request-status">Status: {request.status}</Typography>
               {request.goal && <Typography>Goal: {request.goal}</Typography>}
               {request.message && <Typography>{request.message}</Typography>}
+              {request.paymentStatus === "UNPAID" && request.status === "ACCEPTED" && (
+                <Box>
+                  <Typography>
+                    Payment due: {(request.priceCents / 100).toFixed(2)} {request.currency}. Pay your coach, then confirm below.
+                  </Typography>
+                  {(coaches.find((c) => c.keycloakId === request.coachId)?.paymentMethods ?? []).map((m) => (
+                    <Typography key={m.id}>{m.label}{m.instructions ? `: ${m.instructions}` : ""}</Typography>
+                  ))}
+                  <TextField select label="Payment method" size="small" margin="dense" sx={{ minWidth: 200 }}
+                    value={methodChoice[request.id] ?? ""}
+                    onChange={(e) => setMethodChoice({ ...methodChoice, [request.id]: e.target.value })}>
+                    {(coaches.find((c) => c.keycloakId === request.coachId)?.paymentMethods ?? []).map((m) => (
+                      <MenuItem key={m.id} value={m.id}>{m.label}</MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField label="Reference (optional)" size="small" margin="dense"
+                    value={references[request.id] ?? ""}
+                    onChange={(e) => setReferences({ ...references, [request.id]: e.target.value })} />
+                  <Button variant="contained" disabled={!methodChoice[request.id]}
+                    onClick={() => act(() => claimPayment(request.id, methodChoice[request.id], references[request.id] ?? ""))}>
+                    I've paid
+                  </Button>
+                </Box>
+              )}
+              {request.paymentStatus === "PENDING_CONFIRMATION" && (
+                <Typography>Waiting for your coach to confirm your payment.</Typography>
+              )}
+              {request.paymentStatus === "PAID" && <Typography>Payment confirmed.</Typography>}
               {request.status === "ACCEPTED" && (
                 <Button variant="contained" onClick={() => navigate(`/coaching/${request.id}`)}>
                   Plan &amp; messages

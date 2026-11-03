@@ -15,7 +15,14 @@ const api = vi.hoisted(() => ({
     cancelRequest: vi.fn(),
     getReceivedRequests: vi.fn(),
     acceptRequest: vi.fn(),
-    declineRequest: vi.fn()
+    declineRequest: vi.fn(),
+    getPaymentMethods: vi.fn(),
+    setPricing: vi.fn(),
+    addPaymentMethod: vi.fn(),
+    deletePaymentMethod: vi.fn(),
+    claimPayment: vi.fn(),
+    confirmPayment: vi.fn(),
+    rejectPayment: vi.fn()
 }));
 
 vi.mock('../services/api', () => api);
@@ -48,7 +55,32 @@ describe('coach role and training requests', () => {
         await waitFor(() => expect(api.sendTrainingRequest).toHaveBeenCalledWith('c1', 'Run a 10k', 'Help me'));
     });
 
+    it('lets a trainee mark a payment as sent', async () => {
+        api.getCoaches.mockResolvedValue({ data: [{ keycloakId: 'c1', firstName: 'Ada', email: 'a@x.test', coachPriceCents: 5000, currency: 'USD', paymentMethods: [{ id: 'm1', label: 'Bank', instructions: 'IBAN 1' }] }] });
+        api.getSentRequests.mockResolvedValue({ data: [{ id: 'r1', coachId: 'c1', coachName: 'Ada', status: 'ACCEPTED', paymentStatus: 'UNPAID', priceCents: 5000, currency: 'USD' }] });
+        api.claimPayment.mockResolvedValue({});
+        render(<MemoryRouter><CoachesPage onLogout={() => {}} /></MemoryRouter>);
+
+        fireEvent.mouseDown(await screen.findByLabelText('Payment method'));
+        fireEvent.click(await screen.findByRole('option', { name: 'Bank' }));
+        fireEvent.click(screen.getByRole('button', { name: "I've paid" }));
+
+        await waitFor(() => expect(api.claimPayment).toHaveBeenCalledWith('r1', 'm1', ''));
+    });
+
+    it('lets a coach confirm a claimed payment', async () => {
+        api.getPaymentMethods.mockResolvedValue({ data: [] });
+        api.getReceivedRequests.mockResolvedValue({ data: [{ id: 'r1', traineeId: 't1', traineeName: 'Sam', status: 'ACCEPTED', paymentStatus: 'PENDING_CONFIRMATION', priceCents: 5000, currency: 'USD', paymentMethodLabel: 'Bank' }] });
+        api.confirmPayment.mockResolvedValue({});
+        render(<MemoryRouter><TraineesPage onLogout={() => {}} /></MemoryRouter>);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Confirm payment' }));
+
+        await waitFor(() => expect(api.confirmPayment).toHaveBeenCalledWith('r1'));
+    });
+
     it('lets a coach accept a pending request', async () => {
+        api.getPaymentMethods.mockResolvedValue({ data: [] });
         api.getReceivedRequests.mockResolvedValue({ data: [{ id: 'r1', traineeId: 't1', traineeName: 'Sam', status: 'PENDING' }] });
         api.acceptRequest.mockResolvedValue({});
         render(<MemoryRouter><TraineesPage onLogout={() => {}} /></MemoryRouter>);

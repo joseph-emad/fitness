@@ -16,11 +16,19 @@ const CoachingPage = ({ onLogout }) => {
   const [plan, setPlan] = useState(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     getTrainingPlan(requestId)
       .then((response) => setPlan(response.data))
-      .catch((e) => setPlan(e.response?.status === 404 ? (isCoach ? emptyPlan() : false) : null));
+      .catch((e) => {
+        if (e.response?.status === 402) {
+          setLocked(true);
+          setPlan(false);
+        } else {
+          setPlan(e.response?.status === 404 ? (isCoach ? emptyPlan() : false) : null);
+        }
+      });
   }, [requestId, isCoach]);
 
   const update = (mutate) => setPlan((current) => {
@@ -118,7 +126,10 @@ const CoachingPage = ({ onLogout }) => {
       {error && <Typography role="alert">{error}</Typography>}
       <Box component="section" className="coach-panel">
         {plan === null && <Typography>Loading plan...</Typography>}
-        {plan === false && <Typography>Your coach hasn't created a plan yet.</Typography>}
+        {plan === false && locked && (
+          <Typography>Your plan is locked until your coach confirms your payment. You can still chat below.</Typography>
+        )}
+        {plan === false && !locked && <Typography>Your coach hasn't created a plan yet.</Typography>}
         {plan && (isCoach ? renderEditor() : renderView())}
       </Box>
       <ChatPanel requestId={requestId} currentUserId={profile.keycloakId} />

@@ -1,5 +1,6 @@
 package com.fitness.userservice.controller;
 
+import com.fitness.userservice.dto.PaymentClaimRequest;
 import com.fitness.userservice.dto.TrainingRequestCreate;
 import com.fitness.userservice.dto.TrainingRequestResponse;
 import com.fitness.userservice.service.TrainingRequestService;
@@ -50,5 +51,25 @@ public class TrainingRequestController {
     public ResponseEntity<TrainingRequestResponse> cancel(
             @PathVariable String id, @RequestHeader("X-User-ID") String userId) {
         return ResponseEntity.ok(service.cancel(id, userId));
+    }
+
+    @PutMapping("/{id}/payment/claim")
+    public ResponseEntity<TrainingRequestResponse> claimPayment(
+            @PathVariable String id,
+            @Valid @RequestBody PaymentClaimRequest claim,
+            @RequestHeader("X-User-ID") String userId) {
+        return ResponseEntity.ok(service.claimPayment(id, userId, claim));
+    }
+
+    @PutMapping("/{id}/payment/confirm")
+    public ResponseEntity<TrainingRequestResponse> confirmPayment(
+            @PathVariable String id, @RequestHeader("X-User-ID") String userId) {
+        return ResponseEntity.ok(service.confirmPayment(id, userId));
+    }
+
+    @PutMapping("/{id}/payment/reject")
+    public ResponseEntity<TrainingRequestResponse> rejectPayment(
+            @PathVariable String id, @RequestHeader("X-User-ID") String userId) {
+        return ResponseEntity.ok(service.rejectPayment(id, userId));
     }
 }

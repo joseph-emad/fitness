@@ -32,6 +32,12 @@ public class User {
 
     private Boolean roleChosen = false;
 
+    // Coach pricing: null or 0 means free
+    private Long coachPriceCents;
+
+    @Column(length = 3)
+    private String currency;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

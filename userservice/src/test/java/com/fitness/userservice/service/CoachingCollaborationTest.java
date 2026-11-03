@@ -47,6 +47,7 @@ class CoachingCollaborationTest {
         request.setStatus(TrainingRequestStatus.ACCEPTED);
         lenient().when(requestService.findForParticipant("r1", "coach")).thenReturn(request);
         lenient().when(requestService.findForParticipant("r1", "trainee")).thenReturn(request);
+        lenient().when(requestService.isPlanUnlocked(request)).thenReturn(true);
         lenient().when(planRepository.save(any(TrainingPlan.class))).thenAnswer(i -> i.getArgument(0));
         lenient().when(messageRepository.save(any(Message.class))).thenAnswer(i -> i.getArgument(0));
     }
@@ -76,6 +77,18 @@ class CoachingCollaborationTest {
         when(planRepository.findByRequestId("r1")).thenReturn(Optional.empty());
 
         assertStatus(HttpStatus.NOT_FOUND, () -> planService.get("r1", "trainee"));
+    }
+
+    @Test
+    void unpaidTraineeCannotViewPlanButCoachCan() {
+        when(requestService.isPlanUnlocked(request)).thenReturn(false);
+        TrainingPlan stored = new TrainingPlan();
+        stored.setTitle("Strength");
+        stored.setContent("[]");
+        lenient().when(planRepository.findByRequestId("r1")).thenReturn(Optional.of(stored));
+
+        assertStatus(HttpStatus.PAYMENT_REQUIRED, () -> planService.get("r1", "trainee"));
+        assertEquals("Strength", planService.get("r1", "coach").getTitle());
     }
 
     @Test

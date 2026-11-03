@@ -28,6 +28,20 @@ public class TrainingRequest {
     @Column(length = 500)
     private String message;
 
+    // Price snapshot taken when the request is created; null paymentStatus (old rows) means NOT_REQUIRED
+    private Long priceCents;
+
+    @Column(length = 3)
+    private String currency;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus = PaymentStatus.NOT_REQUIRED;
+
+    private String paymentMethodId;
+
+    @Column(length = 200)
+    private String paymentReference;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TrainingRequestStatus status = TrainingRequestStatus.PENDING;

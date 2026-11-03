@@ -1,6 +1,10 @@
 package com.fitness.userservice.service;
 
+import com.fitness.userservice.dto.PaymentClaimRequest;
 import com.fitness.userservice.dto.TrainingRequestCreate;
+import com.fitness.userservice.model.PaymentMethod;
+import com.fitness.userservice.model.PaymentStatus;
+import com.fitness.userservice.repository.PaymentMethodRepository;
 import com.fitness.userservice.model.TrainingRequest;
 import com.fitness.userservice.model.TrainingRequestStatus;
 import com.fitness.userservice.model.User;
@@ -29,6 +33,8 @@ class TrainingRequestServiceTest {
     private TrainingRequestRepository requestRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private PaymentMethodRepository paymentMethodRepository;
     @InjectMocks
     private TrainingRequestService service;
 
@@ -96,6 +102,78 @@ class TrainingRequestServiceTest {
         when(requestRepository.findById("r1")).thenReturn(Optional.of(request));
 
         assertEquals(TrainingRequestStatus.CANCELLED, service.cancel("r1", "trainee").getStatus());
+    }
+
+    @Test
+    void pricedCoachCreatesUnpaidRequestWithPriceSnapshot() {
+        coach.setCoachPriceCents(5000L);
+        coach.setCurrency("EUR");
+
+        var response = service.create("trainee", create("coach"));
+
+        assertEquals(PaymentStatus.UNPAID, response.getPaymentStatus());
+        assertEquals(5000L, response.getPriceCents());
+        assertEquals("EUR", response.getCurrency());
+    }
+
+    @Test
+    void freeCoachRequestNeedsNoPayment() {
+        assertEquals(PaymentStatus.NOT_REQUIRED, service.create("trainee", create("coach")).getPaymentStatus());
+    }
+
+    @Test
+    void paymentClaimThenCoachConfirmation() {
+        TrainingRequest request = unpaidAccepted();
+        when(requestRepository.findById("r1")).thenReturn(Optional.of(request));
+        PaymentMethod method = new PaymentMethod();
+        method.setId("m1");
+        method.setCoachId("coach");
+        method.setLabel("Bank");
+        when(paymentMethodRepository.findById("m1")).thenReturn(Optional.of(method));
+        PaymentClaimRequest claim = new PaymentClaimRequest();
+        claim.setPaymentMethodId("m1");
+
+        assertEquals(PaymentStatus.PENDING_CONFIRMATION, service.claimPayment("r1", "trainee", claim).getPaymentStatus());
+        assertFalse(service.isPlanUnlocked(request));
+        assertEquals(PaymentStatus.PAID, service.confirmPayment("r1", "coach").getPaymentStatus());
+        assertTrue(service.isPlanUnlocked(request));
+    }
+
+    @Test
+    void claimWithAnotherCoachsMethodIsRejected() {
+        when(requestRepository.findById("r1")).thenReturn(Optional.of(unpaidAccepted()));
+        PaymentMethod method = new PaymentMethod();
+        method.setCoachId("someone-else");
+        when(paymentMethodRepository.findById("m1")).thenReturn(Optional.of(method));
+        PaymentClaimRequest claim = new PaymentClaimRequest();
+        claim.setPaymentMethodId("m1");
+
+        assertStatus(HttpStatus.BAD_REQUEST, () -> service.claimPayment("r1", "trainee", claim));
+    }
+
+    @Test
+    void rejectedClaimReturnsToUnpaid() {
+        TrainingRequest request = unpaidAccepted();
+        request.setPaymentStatus(PaymentStatus.PENDING_CONFIRMATION);
+        when(requestRepository.findById("r1")).thenReturn(Optional.of(request));
+
+        assertEquals(PaymentStatus.UNPAID, service.rejectPayment("r1", "coach").getPaymentStatus());
+    }
+
+    @Test
+    void traineeCannotConfirmOwnPayment() {
+        TrainingRequest request = unpaidAccepted();
+        request.setPaymentStatus(PaymentStatus.PENDING_CONFIRMATION);
+        when(requestRepository.findById("r1")).thenReturn(Optional.of(request));
+
+        assertStatus(HttpStatus.NOT_FOUND, () -> service.confirmPayment("r1", "trainee"));
+    }
+
+    private TrainingRequest unpaidAccepted() {
+        TrainingRequest request = pending();
+        request.setStatus(TrainingRequestStatus.ACCEPTED);
+        request.setPaymentStatus(PaymentStatus.UNPAID);
+        return request;
     }
 
     private TrainingRequest pending() {

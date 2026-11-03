@@ -4,6 +4,8 @@ import com.fitness.userservice.model.UserRole;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class UserResponse {
@@ -25,6 +27,12 @@ public class UserResponse {
     private UserRole role;
 
     private boolean roleChosen;
+
+    private Long coachPriceCents;
+
+    private String currency;
+
+    private List<PaymentMethodDto> paymentMethods = new ArrayList<>();
 
     private LocalDateTime createdAt;
 
