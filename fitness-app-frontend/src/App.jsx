@@ -12,6 +12,7 @@ import ActivityForm from "./components/ActivityForm";
 import ActivityList from "./components/ActivityList";
 import AppLayout from "./components/AppLayout";
 import CoachesPage from "./components/CoachesPage";
+import CoachingPage from "./components/CoachingPage";
 import RoleSelection from "./components/RoleSelection";
 import TraineeActivitiesPage from "./components/TraineeActivitiesPage";
 import TraineesPage from "./components/TraineesPage";
@@ -110,6 +111,7 @@ function App() {
             ) : (
               <Route path="/coaches" element={<CoachesPage onLogout={handleLogout} />} />
             )}
+            <Route path="/coaching/:requestId" element={<CoachingPage onLogout={handleLogout} />} />
             <Route path="*" element={<Navigate to="/activities" replace />} />
           </Routes>
         </Box>

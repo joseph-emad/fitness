@@ -35,16 +35,17 @@ describe('coach role and training requests', () => {
         expect(api.chooseRole).toHaveBeenCalledWith('COACH');
     });
 
-    it('lets a trainee request a coach with a message', async () => {
+    it('lets a trainee request a coach with a goal and message', async () => {
         api.getCoaches.mockResolvedValue({ data: [{ keycloakId: 'c1', firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test' }] });
         api.getSentRequests.mockResolvedValue({ data: [] });
         api.sendTrainingRequest.mockResolvedValue({});
         render(<MemoryRouter><CoachesPage onLogout={() => {}} /></MemoryRouter>);
 
-        fireEvent.change(await screen.findByLabelText('Message (optional)'), { target: { value: 'Help me' } });
+        fireEvent.change(await screen.findByLabelText(/Your goal/), { target: { value: 'Run a 10k' } });
+        fireEvent.change(screen.getByLabelText('Message (optional)'), { target: { value: 'Help me' } });
         fireEvent.click(screen.getByRole('button', { name: 'Request training' }));
 
-        await waitFor(() => expect(api.sendTrainingRequest).toHaveBeenCalledWith('c1', 'Help me'));
+        await waitFor(() => expect(api.sendTrainingRequest).toHaveBeenCalledWith('c1', 'Run a 10k', 'Help me'));
     });
 
     it('lets a coach accept a pending request', async () => {

@@ -14,6 +14,7 @@ public class TrainingRequestResponse {
     private String coachId;
     private String coachName;
     private String coachEmail;
+    private String goal;
     private String message;
     private TrainingRequestStatus status;
     private LocalDateTime createdAt;

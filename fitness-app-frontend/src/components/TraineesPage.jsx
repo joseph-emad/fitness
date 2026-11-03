@@ -53,6 +53,7 @@ const TraineesPage = ({ onLogout }) => {
             <CardContent>
               <Typography variant="h6">{request.traineeName}</Typography>
               <Typography>{request.traineeEmail}</Typography>
+              {request.goal && <Typography>Goal: {request.goal}</Typography>}
               {request.message && <Typography>{request.message}</Typography>}
               <Button variant="contained" onClick={() => answer(() => acceptRequest(request.id))}>Accept</Button>
               <Button onClick={() => answer(() => declineRequest(request.id))}>Decline</Button>
@@ -67,9 +68,11 @@ const TraineesPage = ({ onLogout }) => {
           <Card className="coach-card" key={request.id}>
             <CardContent>
               <Typography variant="h6">{request.traineeName}</Typography>
+              {request.goal && <Typography>Goal: {request.goal}</Typography>}
               <Button variant="contained" onClick={() => navigate(`/trainees/${request.traineeId}`)}>
                 View training
               </Button>
+              <Button onClick={() => navigate(`/coaching/${request.id}`)}>Plan &amp; messages</Button>
             </CardContent>
           </Card>
         ))}

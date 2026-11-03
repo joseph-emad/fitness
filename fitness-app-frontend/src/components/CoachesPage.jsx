@@ -1,5 +1,6 @@
 import { Box, Button, Card, CardContent, TextField, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { cancelRequest, getCoaches, getSentRequests, sendTrainingRequest } from "../services/api";
 import AppLayout from "./AppLayout";
 
@@ -9,6 +10,8 @@ const CoachesPage = ({ onLogout }) => {
   const [coaches, setCoaches] = useState([]);
   const [requests, setRequests] = useState([]);
   const [messages, setMessages] = useState({});
+  const [goals, setGoals] = useState({});
+  const navigate = useNavigate();
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -58,6 +61,16 @@ const CoachesPage = ({ onLogout }) => {
               {!hasActive(coach.keycloakId) && (
                 <>
                   <TextField
+                    label="Your goal"
+                    required
+                    size="small"
+                    fullWidth
+                    margin="dense"
+                    slotProps={{ htmlInput: { maxLength: 500 } }}
+                    value={goals[coach.keycloakId] ?? ""}
+                    onChange={(e) => setGoals({ ...goals, [coach.keycloakId]: e.target.value })}
+                  />
+                  <TextField
                     label="Message (optional)"
                     size="small"
                     fullWidth
@@ -68,7 +81,8 @@ const CoachesPage = ({ onLogout }) => {
                   />
                   <Button
                     variant="contained"
-                    onClick={() => act(() => sendTrainingRequest(coach.keycloakId, messages[coach.keycloakId] ?? ""))}
+                    disabled={!(goals[coach.keycloakId] ?? "").trim()}
+                    onClick={() => act(() => sendTrainingRequest(coach.keycloakId, goals[coach.keycloakId].trim(), messages[coach.keycloakId] ?? ""))}
                   >
                     Request training
                   </Button>
@@ -86,7 +100,13 @@ const CoachesPage = ({ onLogout }) => {
             <CardContent>
               <Typography variant="h6">{request.coachName}</Typography>
               <Typography className="request-status">Status: {request.status}</Typography>
+              {request.goal && <Typography>Goal: {request.goal}</Typography>}
               {request.message && <Typography>{request.message}</Typography>}
+              {request.status === "ACCEPTED" && (
+                <Button variant="contained" onClick={() => navigate(`/coaching/${request.id}`)}>
+                  Plan &amp; messages
+                </Button>
+              )}
               {ACTIVE.includes(request.status) && (
                 <Button onClick={() => act(() => cancelRequest(request.id))}>
                   {request.status === "ACCEPTED" ? "End coaching" : "Cancel request"}

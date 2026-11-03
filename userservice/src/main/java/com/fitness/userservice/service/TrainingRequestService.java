@@ -44,6 +44,7 @@ public class TrainingRequestService {
         TrainingRequest request = new TrainingRequest();
         request.setTraineeId(traineeId);
         request.setCoachId(coach.getKeycloakId());
+        request.setGoal(create.getGoal() == null ? null : create.getGoal().trim());
         request.setMessage(create.getMessage() == null ? null : create.getMessage().trim());
         return toResponse(requestRepository.save(request));
     }
@@ -82,6 +83,13 @@ public class TrainingRequestService {
                 traineeId, coachId, TrainingRequestStatus.ACCEPTED);
     }
 
+    // Returns the request if the caller is its trainee or coach; otherwise 404.
+    public TrainingRequest findForParticipant(String requestId, String userId) {
+        return requestRepository.findById(requestId)
+                .filter(r -> r.getTraineeId().equals(userId) || r.getCoachId().equals(userId))
+                .orElseThrow(this::notFound);
+    }
+
     private TrainingRequestResponse decide(String requestId, String coachId, TrainingRequestStatus status) {
         TrainingRequest request = requestRepository.findById(requestId)
                 .filter(r -> r.getCoachId().equals(coachId))
@@ -107,6 +115,7 @@ public class TrainingRequestService {
         response.setId(request.getId());
         response.setTraineeId(request.getTraineeId());
         response.setCoachId(request.getCoachId());
+        response.setGoal(request.getGoal());
         response.setMessage(request.getMessage());
         response.setStatus(request.getStatus());
         response.setCreatedAt(request.getCreatedAt());

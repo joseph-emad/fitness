@@ -23,6 +23,9 @@ public class TrainingRequest {
     private String coachId;
 
     @Column(length = 500)
+    private String goal;
+
+    @Column(length = 500)
     private String message;
 
     @Enumerated(EnumType.STRING)

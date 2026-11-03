@@ -30,7 +30,11 @@ export const getActivityRecommendation = (id, traineeId) => api.get(`/recommenda
 export const getProfile = (userId) => api.get(`/users/${userId}`);
 export const chooseRole = (role) => api.put('/users/me/role', { role });
 export const getCoaches = () => api.get('/users/coaches');
-export const sendTrainingRequest = (coachId, message) => api.post('/training-requests', { coachId, message });
+export const sendTrainingRequest = (coachId, goal, message) => api.post('/training-requests', { coachId, goal, message });
+export const getTrainingPlan = (requestId) => api.get(`/training-plans/request/${requestId}`);
+export const saveTrainingPlan = (requestId, plan) => api.put(`/training-plans/request/${requestId}`, plan);
+export const getMessages = (requestId, after) => api.get(`/messages/request/${requestId}`, { params: after ? { after } : undefined });
+export const sendMessage = (requestId, content) => api.post(`/messages/request/${requestId}`, { content });
 export const getSentRequests = () => api.get('/training-requests/sent');
 export const getReceivedRequests = () => api.get('/training-requests/received');
 export const acceptRequest = (id) => api.put(`/training-requests/${id}/accept`);
