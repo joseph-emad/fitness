@@ -26,6 +26,10 @@ AI recommendations require a Gemini API key. Set `GEMINI_API_KEY` in `.env` to e
 
 The activity log supports running, walking, cycling, swimming, weight training, yoga, HIIT, cardio, stretching, and other activities. Weight-training sessions can include multiple exercises, each with a set count, reps per set, weight in kilograms, and rest time in seconds.
 
+## Expo mobile app
+
+`fitness-app-mobile` is a native Expo app for Android and iOS that uses the same gateway and activity data. It supports Keycloak sign-in/sign-up, permanent role selection, activity history, and activity entry; see [`fitness-app-mobile/README.md`](fitness-app-mobile/README.md) for setup, emulator/device URLs, issuer alignment, and iOS build requirements. The mobile app uses a separate public Keycloak PKCE client, and local physical-device testing requires `KEYCLOAK_PUBLIC_URL` in the root `.env` to match the mobile app's Keycloak URL.
+
 Activity creation stores the activity and its RabbitMQ event in a MongoDB transactional outbox. The local MongoDB container is initialized as a single-node replica set for this transaction. The outbox retries failed publishes and uses RabbitMQ publisher confirms; after ten unsuccessful attempts an event is marked `FAILED` for operator review. Delivery is at least once, and the AI consumer is idempotent by activity ID. Any standalone activity-service environment must also use MongoDB configured as a replica set and include its replica set name in `ACTIVITY_MONGODB_URI`.
 
 Use `docker compose down` to stop the services. Compose keeps PostgreSQL and MongoDB data in named volumes. To intentionally remove local database data as well, run `docker compose down --volumes`.
